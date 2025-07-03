@@ -1,65 +1,127 @@
+"""
+Main Flask Application for the Chatbot
+
+This file contains the core web application logic for our chatbot. It handles:
+1. Web routes for the chat interface
+2. Session management for conversation history
+3. Integration with the knowledge base
+4. Error handling and logging
+5. Response generation and confidence scoring
+"""
+
 from flask import Flask, render_template, request, jsonify, session
 from datetime import datetime, timedelta
 import os
 import logging
 from knowledge_base import KnowledgeBase
 
-# Configure logging
+# Set up logging to help us debug the application
+# This will show important information in the console while the app runs
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+# Initialize our Flask web application
 app = Flask(__name__)
-# Generate a random secret key
-app.secret_key = os.urandom(24)
-# Configure session to be more robust
-app.config['SESSION_TYPE'] = 'filesystem'
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
-app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
-app.config['SESSION_COOKIE_HTTPONLY'] = True
 
-# Initialize knowledge base
+# Security Configuration
+# ---------------------
+# Generate a random secret key for session encryption
+# This is important for keeping user data secure
+app.secret_key = os.urandom(24)
+
+# Session Configuration
+# -------------------
+# These settings control how user sessions are handled
+app.config['SESSION_TYPE'] = 'filesystem'  # Store session data in files
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)  # Sessions expire after 30 minutes
+app.config['SESSION_COOKIE_SECURE'] = False  # Set to True if using HTTPS in production
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # Protect against XSS attacks
+
+# Create and load our knowledge base
+# This is where all the chatbot's responses are stored
 kb = KnowledgeBase()
 try:
+    # Try to load existing knowledge from our JSON file
     kb.load_from_file('knowledge_base.json')
 except Exception as e:
+    # Log any errors that occur during loading
     logger.error(f"Error loading knowledge base: {str(e)}")
 
 def ensure_session_valid():
-    """Ensure the session is valid and contains necessary data"""
+    """
+    Make sure the user's session is properly set up
+    
+    This function:
+    1. Checks if we have a conversation history for this user
+    2. Creates a new history if none exists
+    3. Validates the format of existing history
+    
+    Returns:
+        list: The conversation history for this user
+    """
     if 'conversation_history' not in session:
+        # First time user - create new conversation history
         logger.debug("Initializing new conversation history in session")
         session['conversation_history'] = []
     elif not isinstance(session['conversation_history'], list):
+        # Something's wrong with the history format - reset it
         logger.warning("Invalid conversation history format, resetting")
         session['conversation_history'] = []
     return session['conversation_history']
 
 @app.route('/')
 def home():
+    """
+    Handle requests to the home page
+    
+    This function:
+    1. Ensures the user has a valid session
+    2. Renders the main chat interface
+    
+    Returns:
+        str: The rendered HTML for the home page
+    """
     conversation_history = ensure_session_valid()
     logger.debug(f"Home route accessed. Session contains {len(conversation_history)} messages")
     return render_template('index.html')
 
 @app.route('/chat', methods=['POST'])
 def chat():
+    """
+    Handle incoming chat messages from users
+    
+    This function:
+    1. Receives the user's message
+    2. Gets a response from the knowledge base
+    3. Updates the conversation history
+    4. Returns the response with confidence information
+    
+    Returns:
+        json: The chatbot's response and metadata
+    """
     try:
+        # Get the user's message from the request
         message = request.json.get('message', '')
         if not message:
             logger.warning("Empty message received")
             return jsonify({'error': 'No message provided'}), 400
 
-        # Get and validate conversation history
+        # Get and validate the user's conversation history
         conversation_history = ensure_session_valid()
         logger.debug(f"Processing message: '{message}' with {len(conversation_history)} existing messages")
         
         # Get response from knowledge base
         try:
+            # Ask our knowledge base for the best response
             response_data = kb.get_response(message, include_similarity=True)
             response = response_data['answer']
             similarity = response_data['similarity']
             
-            # Determine context based on similarity
-            context = 'high_confidence' if similarity > 0.8 else 'medium_confidence' if similarity > 0.6 else 'low_confidence'
+            # Determine how confident we are in the response
+            # Higher similarity means we found a better match
+            context = 'high_confidence' if similarity > 0.8 else \
+                     'medium_confidence' if similarity > 0.6 else \
+                     'low_confidence'
             
             logger.debug(f"Generated response with similarity {similarity:.2f}")
             
@@ -72,14 +134,14 @@ def chat():
         
         # Update conversation history
         try:
-            # Add user message
+            # Add the user's message to history
             conversation_history.append({
                 'message': message,
                 'timestamp': datetime.now().isoformat(),
                 'context': context
             })
             
-            # Add bot response
+            # Add the bot's response to history
             conversation_history.append({
                 'bot_response': response,
                 'timestamp': datetime.now().isoformat(),
@@ -87,13 +149,14 @@ def chat():
                 'similarity': similarity
             })
             
-            # Keep only last 10 messages (5 exchanges)
+            # Keep only the last 10 messages (5 exchanges)
+            # This prevents the history from growing too large
             if len(conversation_history) > 10:
                 conversation_history = conversation_history[-10:]
             
-            # Update session
+            # Save the updated history in the session
             session['conversation_history'] = conversation_history
-            session.modified = True
+            session.modified = True  # Tell Flask the session was modified
             
             logger.debug(f"Updated conversation history, now contains {len(conversation_history)} messages")
             
@@ -104,6 +167,7 @@ def chat():
                 'details': str(e)
             }), 500
 
+        # Return the response to the user
         return jsonify({
             'response': response,
             'context': context,
@@ -119,19 +183,32 @@ def chat():
 
 @app.route('/knowledge', methods=['POST'])
 def add_knowledge():
-    """Add a new entry to the knowledge base"""
+    """
+    Add new knowledge to the chatbot's knowledge base
+    
+    This endpoint allows users to teach the chatbot new responses.
+    It expects JSON data with:
+    - question: What the user might ask
+    - answer: How the chatbot should respond
+    - metadata: Optional additional information about this knowledge
+    
+    Returns:
+        json: Success or error message
+    """
     try:
+        # Get the data from the request
         data = request.json
         if not data or 'question' not in data or 'answer' not in data:
             return jsonify({'error': 'Missing required fields'}), 400
             
+        # Add the new knowledge to our knowledge base
         kb.add_entry(
             question=data['question'],
             answer=data['answer'],
             metadata=data.get('metadata', {})
         )
         
-        # Optionally save to file
+        # Save the updated knowledge base to file
         kb.save_to_file('knowledge_base.json')
         
         return jsonify({'message': 'Knowledge base entry added successfully'})
@@ -144,4 +221,6 @@ def add_knowledge():
         }), 500
 
 if __name__ == '__main__':
+    # Start the Flask development server
+    # The debug=True setting enables auto-reload when code changes
     app.run(debug=True) 

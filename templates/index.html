@@ -5,32 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Knowledge Bot</title>
     <style>
+        /* Reset default browser styles */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        /* Main page layout */
         body {
+            /* Use system fonts for best performance and native look */
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             line-height: 1.6;
-            background: #f0f2f5;
-            height: 100vh;
+            background: #f0f2f5;  /* Light gray background like modern chat apps */
+            height: 100vh;  /* Full viewport height */
             display: flex;
             flex-direction: column;
             padding: 20px;
         }
 
+        /* Main content container with split layout */
         .container {
             max-width: 1200px;
             margin: 0 auto;
             display: flex;
-            gap: 20px;
+            gap: 20px;  /* Space between chat and knowledge form */
             height: 100%;
         }
 
+        /* Left side - Chat interface */
         .chat-container {
-            flex: 2;
+            flex: 2;  /* Takes up 2/3 of the space */
             background: white;
             border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -39,8 +44,9 @@
             overflow: hidden;
         }
 
+        /* Right side - Knowledge entry form */
         .knowledge-form {
-            flex: 1;
+            flex: 1;  /* Takes up 1/3 of the space */
             background: white;
             border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -50,9 +56,10 @@
             gap: 15px;
         }
 
+        /* Chat header with title and confidence */
         .chat-header {
             padding: 16px 20px;
-            background: #128C7E;
+            background: #128C7E;  /* WhatsApp-style green */
             color: white;
             font-size: 1.2em;
             font-weight: 600;
@@ -61,6 +68,7 @@
             align-items: center;
         }
 
+        /* Shows the bot's confidence level in the header */
         .confidence-indicator {
             font-size: 0.8em;
             padding: 4px 8px;
@@ -68,59 +76,67 @@
             background: rgba(255,255,255,0.2);
         }
 
+        /* Messages container with scrolling */
         .chat-messages {
             flex: 1;
             padding: 20px;
-            overflow-y: auto;
+            overflow-y: auto;  /* Scroll when content overflows */
             display: flex;
             flex-direction: column;
             gap: 12px;
         }
 
+        /* Individual message bubbles */
         .message {
-            max-width: 80%;
+            max-width: 80%;  /* Don't let messages get too wide */
             padding: 10px 15px;
             border-radius: 15px;
             margin: 2px 0;
-            word-wrap: break-word;
+            word-wrap: break-word;  /* Break long words */
             position: relative;
         }
 
+        /* User messages - right side, green background */
         .user-message {
-            background: #DCF8C6;
+            background: #DCF8C6;  /* Light green */
             align-self: flex-end;
         }
 
+        /* Bot messages - left side, gray background */
         .bot-message {
-            background: #E8E8E8;
+            background: #E8E8E8;  /* Light gray */
             align-self: flex-start;
         }
 
+        /* Confidence score display under bot messages */
         .message-confidence {
             font-size: 0.7em;
             color: #666;
             margin-top: 5px;
         }
 
+        /* Color indicators for different confidence levels */
         .high-confidence {
-            border-left: 3px solid #4CAF50;
+            border-left: 3px solid #4CAF50;  /* Green */
         }
 
         .medium-confidence {
-            border-left: 3px solid #FFC107;
+            border-left: 3px solid #FFC107;  /* Yellow */
         }
 
         .low-confidence {
-            border-left: 3px solid #F44336;
+            border-left: 3px solid #F44336;  /* Red */
         }
 
+        /* "Bot is typing" indicator */
         .typing-indicator {
             padding: 10px 20px;
-            display: none;
+            display: none;  /* Hidden by default */
             color: #666;
             font-style: italic;
         }
 
+        /* Bottom input area for typing messages */
         .input-area {
             padding: 15px;
             background: #f5f5f5;
@@ -128,6 +144,7 @@
             gap: 10px;
         }
 
+        /* Text input styling */
         input[type="text"], textarea {
             flex: 1;
             padding: 10px;
@@ -136,9 +153,10 @@
             font-size: 1em;
         }
 
+        /* Button styling */
         button {
             padding: 10px 20px;
-            background: #128C7E;
+            background: #128C7E;  /* Match header color */
             color: white;
             border: none;
             border-radius: 8px;
@@ -147,9 +165,10 @@
         }
 
         button:hover {
-            background: #0C6B5E;
+            background: #0C6B5E;  /* Darker on hover */
         }
 
+        /* Quick reply suggestions */
         .suggestions {
             padding: 10px;
             display: flex;
@@ -170,6 +189,7 @@
             background: #D0D0D0;
         }
 
+        /* Knowledge form styling */
         .knowledge-form h2 {
             color: #333;
             margin-bottom: 10px;
@@ -186,11 +206,13 @@
             color: #666;
         }
 
+        /* Metadata input area */
         .metadata-input {
             display: flex;
             gap: 10px;
         }
 
+        /* Tags display area */
         .tag-list {
             display: flex;
             flex-wrap: wrap;
@@ -199,275 +221,275 @@
         }
 
         .tag {
+            padding: 3px 8px;
             background: #E8E8E8;
-            padding: 2px 8px;
             border-radius: 12px;
+            font-size: 0.8em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .tag button {
+            background: none;
+            color: #666;
+            padding: 0;
+            font-size: 1.2em;
+        }
+
+        /* Error message styling */
+        .error-message {
+            color: #F44336;
             font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        /* Success message styling */
+        .success-message {
+            color: #4CAF50;
+            font-size: 0.9em;
+            margin-top: 5px;
         }
     </style>
 </head>
 <body>
+    <!-- Main container for split layout -->
     <div class="container">
+        <!-- Left side - Chat interface -->
         <div class="chat-container">
+            <!-- Chat header with title and confidence -->
             <div class="chat-header">
                 <span>Knowledge Bot</span>
-                <span class="confidence-indicator" id="confidenceIndicator"></span>
+                <span class="confidence-indicator">Ready to help!</span>
             </div>
-            <div class="chat-messages" id="chatMessages">
-                <div class="message bot-message">
-                    <span>Hello! I'm a knowledge-based chatbot. Ask me anything about Python programming!</span>
-                </div>
-            </div>
-            <div class="typing-indicator" id="typingIndicator">
-                Bot is thinking...
-            </div>
-            <div class="suggestions">
-                <div class="suggestion" onclick="useSuggestion('What is Python?')">What is Python?</div>
-                <div class="suggestion" onclick="useSuggestion('How do I create a list?')">How to create a list?</div>
-                <div class="suggestion" onclick="useSuggestion('What are functions?')">What are functions?</div>
-            </div>
+            
+            <!-- Messages will appear here -->
+            <div class="chat-messages" id="chat-messages"></div>
+            
+            <!-- "Bot is typing" indicator -->
+            <div class="typing-indicator" id="typing-indicator">Bot is thinking...</div>
+            
+            <!-- Message input area -->
             <div class="input-area">
-                <input type="text" id="messageInput" placeholder="Type your message..." autocomplete="off">
+                <input type="text" id="user-input" placeholder="Type your message..." />
                 <button onclick="sendMessage()">Send</button>
+            </div>
+            
+            <!-- Quick reply suggestions -->
+            <div class="suggestions">
+                <div class="suggestion" onclick="usesuggestion('What is Python?')">What is Python?</div>
+                <div class="suggestion" onclick="usesuggestion('How do I create a function?')">How do I create a function?</div>
+                <div class="suggestion" onclick="usesuggestion('Explain variables')">Explain variables</div>
             </div>
         </div>
 
+        <!-- Right side - Knowledge entry form -->
         <div class="knowledge-form">
             <h2>Add New Knowledge</h2>
+            <!-- Form for adding new knowledge -->
             <div class="form-group">
-                <label for="questionInput">Question:</label>
-                <input type="text" id="questionInput" placeholder="Enter a question...">
+                <label for="question-input">Question or Topic</label>
+                <input type="text" id="question-input" placeholder="What might someone ask?" />
             </div>
+            
             <div class="form-group">
-                <label for="answerInput">Answer:</label>
-                <textarea id="answerInput" rows="4" placeholder="Enter the answer..."></textarea>
+                <label for="answer-input">Answer</label>
+                <textarea id="answer-input" rows="4" placeholder="How should the bot respond?"></textarea>
             </div>
+            
             <div class="form-group">
-                <label for="categoryInput">Category:</label>
-                <input type="text" id="categoryInput" placeholder="e.g., programming">
+                <label>Metadata (optional)</label>
+                <div class="metadata-input">
+                    <input type="text" id="tag-input" placeholder="Add a tag" />
+                    <button onclick="addTag()">Add</button>
+                </div>
+                <div class="tag-list" id="tag-list"></div>
             </div>
-            <div class="form-group">
-                <label for="tagsInput">Tags (comma-separated):</label>
-                <input type="text" id="tagsInput" placeholder="e.g., basics, functions">
-                <div class="tag-list" id="tagList"></div>
-            </div>
-            <button onclick="addKnowledge()">Add to Knowledge Base</button>
+            
+            <button onclick="addKnowledge()">Save Knowledge</button>
+            <div id="knowledge-status"></div>
         </div>
     </div>
 
+    <!-- JavaScript for handling chat functionality -->
     <script>
-        const messageInput = document.getElementById('messageInput');
-        const chatMessages = document.getElementById('chatMessages');
-        const typingIndicator = document.getElementById('typingIndicator');
-        const confidenceIndicator = document.getElementById('confidenceIndicator');
-
-        messageInput.addEventListener('keypress', function(e) {
+        // Store tags for the knowledge entry
+        let currentTags = [];
+        
+        // Handle Enter key in the input field
+        document.getElementById('user-input').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 sendMessage();
             }
         });
 
-        function useSuggestion(text) {
-            messageInput.value = text;
+        // Send a message to the chatbot
+        function sendMessage() {
+            const input = document.getElementById('user-input');
+            const message = input.value.trim();
+            
+            if (message) {
+                // Add user message to chat
+                addMessage(message, 'user-message');
+                input.value = '';
+                
+                // Show typing indicator
+                document.getElementById('typing-indicator').style.display = 'block';
+                
+                // Send to backend
+                fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: message })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Hide typing indicator
+                    document.getElementById('typing-indicator').style.display = 'none';
+                    
+                    if (data.error) {
+                        // Handle error
+                        addMessage('Sorry, there was an error: ' + data.error, 'bot-message error');
+                    } else {
+                        // Add bot response with confidence
+                        addMessage(data.response, 'bot-message ' + data.context, data.similarity);
+                        // Update confidence indicator
+                        updateConfidence(data.context, data.similarity);
+                    }
+                })
+                .catch(error => {
+                    // Hide typing indicator and show error
+                    document.getElementById('typing-indicator').style.display = 'none';
+                    addMessage('Sorry, there was an error connecting to the server.', 'bot-message error');
+                });
+            }
+        }
+
+        // Add a message to the chat display
+        function addMessage(text, className, similarity = null) {
+            const messages = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + className;
+            messageDiv.textContent = text;
+            
+            // Add confidence score for bot messages
+            if (similarity !== null) {
+                const confidenceDiv = document.createElement('div');
+                confidenceDiv.className = 'message-confidence';
+                confidenceDiv.textContent = `Confidence: ${Math.round(similarity * 100)}%`;
+                messageDiv.appendChild(confidenceDiv);
+            }
+            
+            messages.appendChild(messageDiv);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        // Update the confidence indicator in the header
+        function updateConfidence(context, similarity) {
+            const indicator = document.querySelector('.confidence-indicator');
+            const percentage = Math.round(similarity * 100);
+            
+            if (context === 'high_confidence') {
+                indicator.textContent = `High Confidence (${percentage}%)`;
+                indicator.style.background = 'rgba(76, 175, 80, 0.2)';
+            } else if (context === 'medium_confidence') {
+                indicator.textContent = `Medium Confidence (${percentage}%)`;
+                indicator.style.background = 'rgba(255, 193, 7, 0.2)';
+            } else {
+                indicator.textContent = `Low Confidence (${percentage}%)`;
+                indicator.style.background = 'rgba(244, 67, 54, 0.2)';
+            }
+        }
+
+        // Use a suggestion as the input
+        function usesuggestion(text) {
+            const input = document.getElementById('user-input');
+            input.value = text;
             sendMessage();
         }
 
-        function addMessage(message, isUser = false, context = '', similarity = null) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+        // Add a tag to the knowledge entry
+        function addTag() {
+            const input = document.getElementById('tag-input');
+            const tag = input.value.trim();
             
-            if (!isUser && context) {
-                messageDiv.classList.add(context);
-            }
-
-            const messageContent = document.createElement('span');
-            messageContent.textContent = message;
-            messageDiv.appendChild(messageContent);
-
-            if (!isUser && similarity !== null) {
-                const confidenceSpan = document.createElement('div');
-                confidenceSpan.className = 'message-confidence';
-                confidenceSpan.textContent = `Confidence: ${(similarity * 100).toFixed(1)}%`;
-                messageDiv.appendChild(confidenceSpan);
-            }
-            
-            chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-
-            // Update confidence indicator
-            if (!isUser && context) {
-                updateConfidenceIndicator(context, similarity);
+            if (tag && !currentTags.includes(tag)) {
+                currentTags.push(tag);
+                input.value = '';
+                updateTagDisplay();
             }
         }
 
-        function updateConfidenceIndicator(context, similarity) {
-            const text = similarity !== null ? 
-                `${context.replace('_', ' ')} (${(similarity * 100).toFixed(1)}%)` :
-                context.replace('_', ' ');
-            confidenceIndicator.textContent = text;
-            confidenceIndicator.style.display = 'block';
-        }
-
-        function showTypingIndicator() {
-            typingIndicator.style.display = 'block';
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-
-        function hideTypingIndicator() {
-            typingIndicator.style.display = 'none';
-        }
-
-        async function sendMessage(retryCount = 0) {
-            const MAX_RETRIES = 2;
-            const message = messageInput.value.trim();
-            if (!message) return;
-
-            // Clear input
-            messageInput.value = '';
-
-            // Add user message
-            addMessage(message, true);
-
-            // Show typing indicator
-            showTypingIndicator();
-
-            try {
-                const response = await fetch('/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ message: message })
-                });
-
-                const data = await response.json();
-                
-                if (data.error) {
-                    console.error('Server error:', data.error, data.details);
-                    
-                    if (retryCount < MAX_RETRIES) {
-                        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
-                        hideTypingIndicator();
-                        return sendMessage(retryCount + 1);
-                    }
-                    
-                    hideTypingIndicator();
-                    addMessage(`I encountered an error: ${data.error}. Please try again.`, false, 'error');
-                    return;
-                }
-
-                // Simulate typing delay based on message length
-                const delay = Math.min(1000, Math.max(500, data.response.length * 20));
-                
-                setTimeout(() => {
-                    hideTypingIndicator();
-                    addMessage(data.response, false, data.context, data.similarity);
-                    updateSuggestions(data.context);
-                }, delay);
-
-            } catch (error) {
-                console.error('Network error:', error);
-                
-                if (retryCount < MAX_RETRIES) {
-                    await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
-                    hideTypingIndicator();
-                    return sendMessage(retryCount + 1);
-                }
-                
-                hideTypingIndicator();
-                addMessage('Sorry, I encountered a network error. Please check your connection and try again.', false, 'error');
-            }
-        }
-
-        async function addKnowledge() {
-            const question = document.getElementById('questionInput').value.trim();
-            const answer = document.getElementById('answerInput').value.trim();
-            const category = document.getElementById('categoryInput').value.trim();
-            const tags = document.getElementById('tagsInput').value.split(',').map(tag => tag.trim()).filter(tag => tag);
-
-            if (!question || !answer) {
-                alert('Please provide both a question and an answer.');
-                return;
-            }
-
-            try {
-                const response = await fetch('/knowledge', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        question: question,
-                        answer: answer,
-                        metadata: {
-                            category: category,
-                            tags: tags
-                        }
-                    })
-                });
-
-                const data = await response.json();
-                
-                if (data.error) {
-                    alert(`Error: ${data.error}`);
-                    return;
-                }
-
-                // Clear form
-                document.getElementById('questionInput').value = '';
-                document.getElementById('answerInput').value = '';
-                document.getElementById('categoryInput').value = '';
-                document.getElementById('tagsInput').value = '';
-                document.getElementById('tagList').innerHTML = '';
-
-                alert('Knowledge added successfully!');
-
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Failed to add knowledge. Please try again.');
-            }
-        }
-
-        // Update tag list as user types
-        document.getElementById('tagsInput').addEventListener('input', function(e) {
-            const tagList = document.getElementById('tagList');
+        // Update the display of current tags
+        function updateTagDisplay() {
+            const tagList = document.getElementById('tag-list');
             tagList.innerHTML = '';
             
-            const tags = this.value.split(',').map(tag => tag.trim()).filter(tag => tag);
-            tags.forEach(tag => {
-                const tagSpan = document.createElement('span');
-                tagSpan.className = 'tag';
-                tagSpan.textContent = tag;
-                tagList.appendChild(tagSpan);
+            currentTags.forEach((tag, index) => {
+                const tagDiv = document.createElement('div');
+                tagDiv.className = 'tag';
+                tagDiv.innerHTML = `
+                    ${tag}
+                    <button onclick="removeTag(${index})">&times;</button>
+                `;
+                tagList.appendChild(tagDiv);
             });
-        });
+        }
 
-        // Dynamic suggestions based on context
-        function updateSuggestions(context) {
-            const suggestions = document.querySelector('.suggestions');
-            suggestions.innerHTML = '';
+        // Remove a tag
+        function removeTag(index) {
+            currentTags.splice(index, 1);
+            updateTagDisplay();
+        }
+
+        // Add new knowledge to the system
+        function addKnowledge() {
+            const question = document.getElementById('question-input').value.trim();
+            const answer = document.getElementById('answer-input').value.trim();
+            const status = document.getElementById('knowledge-status');
             
-            let newSuggestions = [];
-            switch(context) {
-                case 'high_confidence':
-                    newSuggestions = ['Tell me more', 'Can you explain that differently?', 'Give me an example'];
-                    break;
-                case 'medium_confidence':
-                    newSuggestions = ['Is that correct?', 'Can you clarify?', 'What else should I know?'];
-                    break;
-                case 'low_confidence':
-                    newSuggestions = ['Can you rephrase that?', 'Let me try a different question', 'What topics do you know about?'];
-                    break;
-                default:
-                    newSuggestions = ['What is Python?', 'How do I create a list?', 'What are functions?'];
+            if (!question || !answer) {
+                status.className = 'error-message';
+                status.textContent = 'Please fill in both question and answer.';
+                return;
             }
             
-            newSuggestions.forEach(text => {
-                const div = document.createElement('div');
-                div.className = 'suggestion';
-                div.onclick = () => useSuggestion(text);
-                div.textContent = text;
-                suggestions.appendChild(div);
+            const knowledge = {
+                question: question,
+                answer: answer,
+                metadata: {
+                    tags: currentTags
+                }
+            };
+            
+            fetch('/knowledge', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(knowledge)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    status.className = 'error-message';
+                    status.textContent = data.error;
+                } else {
+                    status.className = 'success-message';
+                    status.textContent = 'Knowledge added successfully!';
+                    
+                    // Clear the form
+                    document.getElementById('question-input').value = '';
+                    document.getElementById('answer-input').value = '';
+                    currentTags = [];
+                    updateTagDisplay();
+                }
+            })
+            .catch(error => {
+                status.className = 'error-message';
+                status.textContent = 'Error connecting to server.';
             });
         }
     </script>
