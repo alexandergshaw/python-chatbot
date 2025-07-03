@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Bot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            background: #f0f2f5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .chat-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 16px 20px;
+            background: #128C7E;
+            color: white;
+            font-size: 1.2em;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .context-indicator {
+            font-size: 0.8em;
+            padding: 4px 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 12px;
+            display: none;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            margin: 2px 0;
+            word-wrap: break-word;
+            position: relative;
+        }
+
+        .message-context {
+            font-size: 0.7em;
+            color: #666;
+            position: absolute;
+            top: -15px;
+            opacity: 0.8;
+        }
+
+        .user-message .message-context {
+            right: 0;
+        }
+
+        .bot-message .message-context {
+            left: 0;
+        }
+
+        .user-message {
+            background: #DCF8C6;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .bot-message {
+            background: #E8E8E8;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .input-area {
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+
+        #messageInput {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 24px;
+            outline: none;
+            font-size: 1em;
+        }
+
+        #messageInput:focus {
+            border-color: #128C7E;
+        }
+
+        button {
+            background: #128C7E;
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 24px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #0C6B5E;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            background: #E8E8E8;
+            padding: 10px 15px;
+            border-radius: 15px;
+            border-bottom-left-radius: 4px;
+            color: #666;
+            font-style: italic;
+            margin-bottom: 10px;
+        }
+
+        .suggestions {
+            display: flex;
+            gap: 8px;
+            padding: 10px 15px;
+            overflow-x: auto;
+            background: #f8f9fa;
+            border-top: 1px solid #eee;
+        }
+
+        .suggestion {
+            padding: 8px 16px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 16px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .suggestion:hover {
+            background: #128C7E;
+            color: white;
+            border-color: #128C7E;
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message {
+            animation: slideIn 0.3s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <span>Chat Bot</span>
+            <span class="context-indicator" id="contextIndicator"></span>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot-message">
+                <span class="message-context">greeting</span>
+                Hello! How can I help you today?
+            </div>
+        </div>
+        <div class="typing-indicator" id="typingIndicator">
+            Bot is thinking...
+        </div>
+        <div class="suggestions">
+            <div class="suggestion" onclick="useSuggestion('What can you do?')">What can you do?</div>
+            <div class="suggestion" onclick="useSuggestion('Tell me more about yourself')">Tell me more</div>
+            <div class="suggestion" onclick="useSuggestion('How does this work?')">How does this work?</div>
+        </div>
+        <div class="input-area">
+            <input type="text" id="messageInput" placeholder="Type your message..." autocomplete="off">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const messageInput = document.getElementById('messageInput');
+        const chatMessages = document.getElementById('chatMessages');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const contextIndicator = document.getElementById('contextIndicator');
+
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        function useSuggestion(text) {
+            messageInput.value = text;
+            sendMessage();
+        }
+
+        function addMessage(message, isUser = false, context = '') {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            
+            // Add context indicator if provided
+            if (context) {
+                const contextSpan = document.createElement('span');
+                contextSpan.className = 'message-context';
+                contextSpan.textContent = context;
+                messageDiv.appendChild(contextSpan);
+            }
+
+            const messageContent = document.createElement('span');
+            messageContent.textContent = message;
+            messageDiv.appendChild(messageContent);
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Update context indicator
+            if (!isUser && context) {
+                contextIndicator.textContent = `Context: ${context}`;
+                contextIndicator.style.display = 'block';
+            }
+        }
+
+        function showTypingIndicator() {
+            typingIndicator.style.display = 'block';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            typingIndicator.style.display = 'none';
+        }
+
+        async function sendMessage(retryCount = 0) {
+            const MAX_RETRIES = 2;
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            // Clear input
+            messageInput.value = '';
+
+            // Add user message
+            addMessage(message, true);
+
+            // Show typing indicator
+            showTypingIndicator();
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+
+                const data = await response.json();
+                
+                if (data.error) {
+                    // Handle error response
+                    console.error('Server error:', data.error, data.details);
+                    
+                    if (retryCount < MAX_RETRIES) {
+                        // Wait a bit before retrying
+                        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+                        hideTypingIndicator();
+                        return sendMessage(retryCount + 1);
+                    }
+                    
+                    hideTypingIndicator();
+                    addMessage(`I encountered an error: ${data.error}. Please try again.`, false, 'error');
+                    return;
+                }
+
+                // Simulate typing delay based on message length
+                const delay = Math.min(1000, Math.max(500, data.response.length * 20));
+                
+                setTimeout(() => {
+                    hideTypingIndicator();
+                    addMessage(data.response, false, data.context);
+                    // Update suggestions based on new context
+                    updateSuggestions(data.context);
+                }, delay);
+
+            } catch (error) {
+                console.error('Network error:', error);
+                
+                if (retryCount < MAX_RETRIES) {
+                    // Wait a bit before retrying
+                    await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+                    hideTypingIndicator();
+                    return sendMessage(retryCount + 1);
+                }
+                
+                hideTypingIndicator();
+                addMessage('Sorry, I encountered a network error. Please check your connection and try again.', false, 'error');
+            }
+        }
+
+        // Add some dynamic suggestions based on conversation
+        function updateSuggestions(context) {
+            const suggestions = document.querySelector('.suggestions');
+            suggestions.innerHTML = '';
+            
+            let newSuggestions = [];
+            switch(context) {
+                case 'greeting':
+                    newSuggestions = ['How are you?', 'What can you do?', 'Tell me more'];
+                    break;
+                case 'capabilities':
+                    newSuggestions = ['Can you give an example?', 'How does that work?', 'Tell me more'];
+                    break;
+                case 'farewell':
+                    newSuggestions = ['Wait!', 'One more question', 'See you later'];
+                    break;
+                default:
+                    newSuggestions = ['Tell me more', 'Why is that?', 'How does it work?'];
+            }
+            
+            newSuggestions.forEach(text => {
+                const div = document.createElement('div');
+                div.className = 'suggestion';
+                div.onclick = () => useSuggestion(text);
+                div.textContent = text;
+                suggestions.appendChild(div);
+            });
+        }
+    </script>
+</body>
+</html> 
