@@ -14,7 +14,7 @@ You can deploy this Flask app to Vercel for free using the Vercel website. Hereâ
 4. **Configure the project**
    - For a Python (Flask) app, set the following in the Vercel dashboard:
      - **Framework Preset:** `Other`
-     - **Build Command:** `pip install -r requirements.txt`
+     - **Build Command:** `python -m pip install -r requirements.txt`
      - **Output Directory:** `.`
      - **Root Directory:** (leave blank or set to your project folder if needed)
    
