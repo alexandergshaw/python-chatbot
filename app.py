@@ -1,3 +1,15 @@
+# Suppress debug/info logs from noisy libraries and root logger
+import logging
+logging.basicConfig(level=logging.WARNING)
+for noisy_logger in [
+    "transformers",
+    "sentence_transformers",
+    "torch",
+    "chatterbot",
+    "chatterbot.storage",
+    "urllib3"
+]:
+    logging.getLogger(noisy_logger).setLevel(logging.WARNING)
 """
 Main Flask Application for the Chatbot
 

@@ -1,11 +1,25 @@
+<!--
+  index.html - Main UI for the Flask Chatbot App
+  This file renders the chat interface and the knowledge entry form.
+  Uses Bootstrap 5 for layout and styling, and custom JavaScript for chat logic.
+  Comments throughout explain what each section does in plain English.
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Knowledge Bot</title>
+    <!--
+      Bootstrap 5 CSS for modern, responsive design.
+      This link pulls in all the Bootstrap styles from a CDN (fast, no install needed).
+    -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-VkzQ+1kQ1iKs6vTmya4A1NVuMcZV8+,4D4ew3Efr2E1VlzDq+W8sELpAo0P5PLf4" crossorigin="anonymous">
     <style>
-        /* Reset default browser styles */
+        /*
+          Reset default browser styles so everything looks the same everywhere.
+          This is a common web dev trick.
+        */
         * {
             margin: 0;
             padding: 0;
@@ -253,90 +267,139 @@
     </style>
 </head>
 <body>
-    <!-- Main container for split layout -->
-    <div class="container">
+    <!--
+      Main page layout starts here.
+      Bootstrap's container-fluid gives us a full-width, padded area.
+    -->
+    <div class="container-fluid py-4">
+      <!--
+        Bootstrap row with gap between columns (g-4).
+        This splits the page into chat (left) and knowledge form (right).
+      -->
+      <div class="row g-4">
         <!-- Left side - Chat interface -->
-        <div class="chat-container">
-            <!-- Chat header with title and confidence -->
-            <div class="chat-header">
-                <span>Knowledge Bot</span>
-                <span class="confidence-indicator">Ready to help!</span>
+        <!--
+          Left side: Chat interface (8/12 columns on large screens).
+          Uses a Bootstrap card for a nice box look.
+        -->
+        <div class="col-lg-8">
+          <div class="card h-100 shadow-sm">
+            <!--
+              Card header: App title and bot confidence indicator.
+              Uses Bootstrap flex utilities for spacing.
+            -->
+            <div class="card-header d-flex justify-content-between align-items-center bg-success text-white">
+              <span class="fw-bold">Knowledge Bot</span>
+              <!-- This span updates to show how confident the bot is in its answer -->
+              <span class="confidence-indicator small">Ready to help!</span>
             </div>
-            
-            <!-- Messages will appear here -->
-            <div class="chat-messages" id="chat-messages"></div>
-            
-            <!-- "Bot is typing" indicator -->
-            <div class="typing-indicator" id="typing-indicator">Bot is thinking...</div>
-            
-            <!-- Message input area -->
-            <div class="input-area">
-                <input type="text" id="user-input" placeholder="Type your message..." />
-                <button onclick="sendMessage()">Send</button>
+            <!--
+              Card body: Holds the chat messages, typing indicator, input, and suggestions.
+              Uses flex-column so everything stacks vertically.
+            -->
+            <div class="card-body d-flex flex-column p-0" style="height: 500px;">
+              <!--
+                This div is where all chat messages (user and bot) appear.
+                It's scrollable and grows to fill available space.
+              -->
+              <div class="chat-messages flex-grow-1 px-3 py-2" id="chat-messages" style="overflow-y:auto;"></div>
+              <!--
+                Shows when the bot is 'thinking'. Hidden by default, shown while waiting for a response.
+              -->
+              <div class="typing-indicator px-3 py-2" id="typing-indicator" style="display:none; color:#666; font-style:italic;">Bot is thinking...</div>
+              <!--
+                Message input area: user types here and hits Send (or Enter).
+                Uses a Bootstrap form and flex utilities for layout.
+              -->
+              <form class="input-area d-flex gap-2 p-3 border-top bg-light" onsubmit="event.preventDefault(); sendMessage();">
+                <input type="text" class="form-control" id="user-input" placeholder="Type your message..." autocomplete="off" />
+                <button type="submit" class="btn btn-success">Send</button>
+              </form>
+              <!--
+                Quick reply suggestions: click to auto-fill the input and send.
+                Each is a Bootstrap button styled as a pill.
+              -->
+              <div class="suggestions d-flex flex-wrap gap-2 px-3 pb-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm suggestion" onclick="usesuggestion('What is Python?')">What is Python?</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm suggestion" onclick="usesuggestion('How do I create a function?')">How do I create a function?</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm suggestion" onclick="usesuggestion('Explain variables')">Explain variables</button>
+              </div>
             </div>
-            
-            <!-- Quick reply suggestions -->
-            <div class="suggestions">
-                <div class="suggestion" onclick="usesuggestion('What is Python?')">What is Python?</div>
-                <div class="suggestion" onclick="usesuggestion('How do I create a function?')">How do I create a function?</div>
-                <div class="suggestion" onclick="usesuggestion('Explain variables')">Explain variables</div>
-            </div>
+          </div>
         </div>
-
-        <!-- Right side - Knowledge entry form -->
-        <div class="knowledge-form">
-            <h2>Add New Knowledge</h2>
-            <!-- Form for adding new knowledge -->
-            <div class="form-group">
-                <label for="question-input">Question or Topic</label>
-                <input type="text" id="question-input" placeholder="What might someone ask?" />
-            </div>
-            
-            <div class="form-group">
-                <label for="answer-input">Answer</label>
-                <textarea id="answer-input" rows="4" placeholder="How should the bot respond?"></textarea>
-            </div>
-            
-            <div class="form-group">
-                <label>Metadata (optional)</label>
-                <div class="metadata-input">
-                    <input type="text" id="tag-input" placeholder="Add a tag" />
-                    <button onclick="addTag()">Add</button>
+        <!--
+          Right side: Knowledge entry form (4/12 columns on large screens).
+          Lets users add new Q&A pairs to the bot's knowledge base.
+        -->
+        <div class="col-lg-4">
+          <div class="card h-100 shadow-sm knowledge-form">
+            <div class="card-body">
+              <h2 class="h5 mb-4">Add New Knowledge</h2>
+              <!--
+                Form for adding new knowledge.
+                Each input is wrapped in a Bootstrap form group for spacing.
+              -->
+              <form onsubmit="event.preventDefault(); addKnowledge();">
+                <div class="mb-3">
+                  <label for="question-input" class="form-label">Question or Topic</label>
+                  <input type="text" class="form-control" id="question-input" placeholder="What might someone ask?" />
                 </div>
-                <div class="tag-list" id="tag-list"></div>
+                <div class="mb-3">
+                  <label for="answer-input" class="form-label">Answer</label>
+                  <textarea class="form-control" id="answer-input" rows="4" placeholder="How should the bot respond?"></textarea>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Metadata (optional)</label>
+                  <div class="input-group mb-2">
+                    <input type="text" class="form-control" id="tag-input" placeholder="Add a tag" />
+                    <button class="btn btn-outline-primary" type="button" onclick="addTag()">Add</button>
+                  </div>
+                  <!--
+                    Shows all tags the user has added so far.
+                  -->
+                  <div class="tag-list d-flex flex-wrap gap-1" id="tag-list"></div>
+                </div>
+                <button type="submit" class="btn btn-success w-100">Save Knowledge</button>
+                <div id="knowledge-status" class="mt-2"></div>
+              </form>
             </div>
-            
-            <button onclick="addKnowledge()">Save Knowledge</button>
-            <div id="knowledge-status"></div>
+          </div>
         </div>
+      </div>
     </div>
 
+    <!-- Bootstrap 5 JS Bundle (with Popper) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoA6DQD5l5d1Q4u6dkhFpLpocTyBC0bYKT1eZq9VHtV6pi6" crossorigin="anonymous"></script>
     <!-- JavaScript for handling chat functionality -->
     <script>
-        // Store tags for the knowledge entry
+        //
+        // === JavaScript Section: Handles all chat and form logic ===
+        //
+
+        // Store tags for the knowledge entry (user can add multiple tags)
         let currentTags = [];
-        
-        // Handle Enter key in the input field
+
+        // When user presses Enter in the chat input, send the message
         document.getElementById('user-input').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 sendMessage();
             }
         });
 
-        // Send a message to the chatbot
+        // Send a message to the chatbot (called when user hits Send or Enter)
         function sendMessage() {
             const input = document.getElementById('user-input');
             const message = input.value.trim();
-            
+
             if (message) {
-                // Add user message to chat
+                // Show the user's message in the chat window
                 addMessage(message, 'user-message');
                 input.value = '';
-                
-                // Show typing indicator
+
+                // Show the 'Bot is thinking...' indicator
                 document.getElementById('typing-indicator').style.display = 'block';
-                
-                // Send to backend
+
+                // Send the message to the Flask backend using fetch (AJAX)
                 fetch('/chat', {
                     method: 'POST',
                     headers: {
@@ -346,51 +409,54 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    // Hide typing indicator
+                    // Hide the typing indicator
                     document.getElementById('typing-indicator').style.display = 'none';
-                    
+
                     if (data.error) {
-                        // Handle error
+                        // If backend returns an error, show it in the chat
                         addMessage('Sorry, there was an error: ' + data.error, 'bot-message error');
                     } else {
-                        // Add bot response with confidence
+                        // Show the bot's response and confidence
                         addMessage(data.response, 'bot-message ' + data.context, data.similarity);
-                        // Update confidence indicator
+                        // Update the confidence indicator in the header
                         updateConfidence(data.context, data.similarity);
                     }
                 })
                 .catch(error => {
-                    // Hide typing indicator and show error
+                    // If fetch fails (e.g. server down), show error
                     document.getElementById('typing-indicator').style.display = 'none';
                     addMessage('Sorry, there was an error connecting to the server.', 'bot-message error');
                 });
             }
         }
 
-        // Add a message to the chat display
+        // Add a message (user or bot) to the chat window
+        // className controls the style (user-message, bot-message, etc)
+        // similarity is a number (0-1) showing how confident the bot is
         function addMessage(text, className, similarity = null) {
             const messages = document.getElementById('chat-messages');
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message ' + className;
             messageDiv.textContent = text;
-            
-            // Add confidence score for bot messages
+
+            // If this is a bot message, show the confidence score
             if (similarity !== null) {
                 const confidenceDiv = document.createElement('div');
                 confidenceDiv.className = 'message-confidence';
                 confidenceDiv.textContent = `Confidence: ${Math.round(similarity * 100)}%`;
                 messageDiv.appendChild(confidenceDiv);
             }
-            
+
             messages.appendChild(messageDiv);
+            // Always scroll to the bottom so new messages are visible
             messages.scrollTop = messages.scrollHeight;
         }
 
-        // Update the confidence indicator in the header
+        // Update the confidence indicator in the chat header
         function updateConfidence(context, similarity) {
             const indicator = document.querySelector('.confidence-indicator');
             const percentage = Math.round(similarity * 100);
-            
+
             if (context === 'high_confidence') {
                 indicator.textContent = `High Confidence (${percentage}%)`;
                 indicator.style.background = 'rgba(76, 175, 80, 0.2)';
@@ -403,18 +469,18 @@
             }
         }
 
-        // Use a suggestion as the input
+        // When user clicks a suggestion, fill the input and send it
         function usesuggestion(text) {
             const input = document.getElementById('user-input');
             input.value = text;
             sendMessage();
         }
 
-        // Add a tag to the knowledge entry
+        // Add a tag to the knowledge entry (user can add multiple tags)
         function addTag() {
             const input = document.getElementById('tag-input');
             const tag = input.value.trim();
-            
+
             if (tag && !currentTags.includes(tag)) {
                 currentTags.push(tag);
                 input.value = '';
@@ -422,11 +488,11 @@
             }
         }
 
-        // Update the display of current tags
+        // Show all tags the user has added so far
         function updateTagDisplay() {
             const tagList = document.getElementById('tag-list');
             tagList.innerHTML = '';
-            
+
             currentTags.forEach((tag, index) => {
                 const tagDiv = document.createElement('div');
                 tagDiv.className = 'tag';
@@ -438,24 +504,26 @@
             });
         }
 
-        // Remove a tag
+        // Remove a tag by index
         function removeTag(index) {
             currentTags.splice(index, 1);
             updateTagDisplay();
         }
 
-        // Add new knowledge to the system
+        // Add new knowledge to the system (called when user submits the form)
         function addKnowledge() {
             const question = document.getElementById('question-input').value.trim();
             const answer = document.getElementById('answer-input').value.trim();
             const status = document.getElementById('knowledge-status');
-            
+
+            // Validate: must have both question and answer
             if (!question || !answer) {
                 status.className = 'error-message';
                 status.textContent = 'Please fill in both question and answer.';
                 return;
             }
-            
+
+            // Build the knowledge object to send to backend
             const knowledge = {
                 question: question,
                 answer: answer,
@@ -463,7 +531,8 @@
                     tags: currentTags
                 }
             };
-            
+
+            // Send the new knowledge to the backend
             fetch('/knowledge', {
                 method: 'POST',
                 headers: {
@@ -479,8 +548,8 @@
                 } else {
                     status.className = 'success-message';
                     status.textContent = 'Knowledge added successfully!';
-                    
-                    // Clear the form
+
+                    // Clear the form and tags
                     document.getElementById('question-input').value = '';
                     document.getElementById('answer-input').value = '';
                     currentTags = [];
