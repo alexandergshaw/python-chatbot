@@ -370,197 +370,230 @@
 
     <!-- Bootstrap 5 JS Bundle (with Popper) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoA6DQD5l5d1Q4u6dkhFpLpocTyBC0bYKT1eZq9VHtV6pi6" crossorigin="anonymous"></script>
-    <!-- JavaScript for handling chat functionality -->
     <script>
-        //
-        // === JavaScript Section: Handles all chat and form logic ===
-        //
+// chatbot.js - Handles all chat and knowledge base logic for the Flask Chatbot UI
 
-        // Store tags for the knowledge entry (user can add multiple tags)
-        let currentTags = [];
+// Preset Q&A pairs to seed the knowledge base for new users
+const PRESET_KB = [
+    {
+        question: "What is Python?",
+        answer: "Python is a popular, easy-to-read programming language used for web development, data science, automation, and more.",
+        metadata: { tags: ["python", "programming"] }
+    },
+    {
+        question: "How do I create a function?",
+        answer: "In Python, you create a function using the 'def' keyword. For example: def my_function():",
+        metadata: { tags: ["python", "function"] }
+    },
+    {
+        question: "Explain variables",
+        answer: "A variable is a name that refers to a value. In Python, you can create one by writing: my_var = 5",
+        metadata: { tags: ["python", "variables"] }
+    }
+];
 
-        // When user presses Enter in the chat input, send the message
-        document.getElementById('user-input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
-
-        // Send a message to the chatbot (called when user hits Send or Enter)
-        function sendMessage() {
-            const input = document.getElementById('user-input');
-            const message = input.value.trim();
-
-            if (message) {
-                // Show the user's message in the chat window
-                addMessage(message, 'user-message');
-                input.value = '';
-
-                // Show the 'Bot is thinking...' indicator
-                document.getElementById('typing-indicator').style.display = 'block';
-
-                // Send the message to the Flask backend using fetch (AJAX)
-                fetch('/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ message: message })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    // Hide the typing indicator
-                    document.getElementById('typing-indicator').style.display = 'none';
-
-                    if (data.error) {
-                        // If backend returns an error, show it in the chat
-                        addMessage('Sorry, there was an error: ' + data.error, 'bot-message error');
-                    } else {
-                        // Show the bot's response and confidence
-                        addMessage(data.response, 'bot-message ' + data.context, data.similarity);
-                        // Update the confidence indicator in the header
-                        updateConfidence(data.context, data.similarity);
-                    }
-                })
-                .catch(error => {
-                    // If fetch fails (e.g. server down), show error
-                    document.getElementById('typing-indicator').style.display = 'none';
-                    addMessage('Sorry, there was an error connecting to the server.', 'bot-message error');
-                });
-            }
+// Initialize localStorage with presets if not already present
+function initKnowledgeBase() {
+    let kb = [];
+    try {
+        kb = JSON.parse(localStorage.getItem('knowledge_base') || '[]');
+    } catch (e) { kb = []; }
+    // Only add presets if none of the preset questions exist
+    const presetQuestions = PRESET_KB.map(q => q.question);
+    const existingQuestions = kb.map(q => q.question);
+    let changed = false;
+    PRESET_KB.forEach(preset => {
+        if (!existingQuestions.includes(preset.question)) {
+            kb.push(preset);
+            changed = true;
         }
+    });
+    if (changed) {
+        localStorage.setItem('knowledge_base', JSON.stringify(kb));
+    }
+}
 
-        // Add a message (user or bot) to the chat window
-        // className controls the style (user-message, bot-message, etc)
-        // similarity is a number (0-1) showing how confident the bot is
-        function addMessage(text, className, similarity = null) {
-            const messages = document.getElementById('chat-messages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message ' + className;
-            messageDiv.textContent = text;
+// Store tags for the knowledge entry (user can add multiple tags)
+let currentTags = [];
 
-            // If this is a bot message, show the confidence score
-            if (similarity !== null) {
-                const confidenceDiv = document.createElement('div');
-                confidenceDiv.className = 'message-confidence';
-                confidenceDiv.textContent = `Confidence: ${Math.round(similarity * 100)}%`;
-                messageDiv.appendChild(confidenceDiv);
-            }
-
-            messages.appendChild(messageDiv);
-            // Always scroll to the bottom so new messages are visible
-            messages.scrollTop = messages.scrollHeight;
-        }
-
-        // Update the confidence indicator in the chat header
-        function updateConfidence(context, similarity) {
-            const indicator = document.querySelector('.confidence-indicator');
-            const percentage = Math.round(similarity * 100);
-
-            if (context === 'high_confidence') {
-                indicator.textContent = `High Confidence (${percentage}%)`;
-                indicator.style.background = 'rgba(76, 175, 80, 0.2)';
-            } else if (context === 'medium_confidence') {
-                indicator.textContent = `Medium Confidence (${percentage}%)`;
-                indicator.style.background = 'rgba(255, 193, 7, 0.2)';
-            } else {
-                indicator.textContent = `Low Confidence (${percentage}%)`;
-                indicator.style.background = 'rgba(244, 67, 54, 0.2)';
-            }
-        }
-
-        // When user clicks a suggestion, fill the input and send it
-        function usesuggestion(text) {
-            const input = document.getElementById('user-input');
-            input.value = text;
+// When user presses Enter in the chat input, send the message
+function setupInputHandler() {
+    document.getElementById('user-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
             sendMessage();
         }
+    });
+}
 
-        // Add a tag to the knowledge entry (user can add multiple tags)
-        function addTag() {
-            const input = document.getElementById('tag-input');
-            const tag = input.value.trim();
+// Send a message to the chatbot (now uses localStorage knowledge base)
+function sendMessage() {
+    const input = document.getElementById('user-input');
+    const message = input.value.trim();
 
-            if (tag && !currentTags.includes(tag)) {
-                currentTags.push(tag);
-                input.value = '';
-                updateTagDisplay();
-            }
-        }
+    if (message) {
+        // Show the user's message in the chat window
+        addMessage(message, 'user-message');
+        input.value = '';
 
-        // Show all tags the user has added so far
-        function updateTagDisplay() {
-            const tagList = document.getElementById('tag-list');
-            tagList.innerHTML = '';
+        // Show the 'Bot is thinking...' indicator
+        document.getElementById('typing-indicator').style.display = 'block';
 
-            currentTags.forEach((tag, index) => {
-                const tagDiv = document.createElement('div');
-                tagDiv.className = 'tag';
-                tagDiv.innerHTML = `
-                    ${tag}
-                    <button onclick="removeTag(${index})">&times;</button>
-                `;
-                tagList.appendChild(tagDiv);
-            });
-        }
+        setTimeout(() => {
+            // Get the best answer from local knowledge base
+            const result = getBestAnswer(message);
+            document.getElementById('typing-indicator').style.display = 'none';
+            addMessage(result.answer, 'bot-message ' + result.context, result.similarity);
+            updateConfidence(result.context, result.similarity);
+        }, 400); // Simulate a short delay
+    }
+}
 
-        // Remove a tag by index
-        function removeTag(index) {
-            currentTags.splice(index, 1);
-            updateTagDisplay();
-        }
+// Search the local knowledge base for the best answer (simple similarity)
+function getBestAnswer(userMessage) {
+    let kb = [];
+    try {
+        kb = JSON.parse(localStorage.getItem('knowledge_base') || '[]');
+    } catch (e) { kb = []; }
+    if (kb.length === 0) return { answer: "I don't know the answer yet!", similarity: 0, context: 'low_confidence' };
 
-        // Add new knowledge to the system (called when user submits the form)
-        function addKnowledge() {
-            const question = document.getElementById('question-input').value.trim();
-            const answer = document.getElementById('answer-input').value.trim();
-            const status = document.getElementById('knowledge-status');
-
-            // Validate: must have both question and answer
-            if (!question || !answer) {
-                status.className = 'error-message';
-                status.textContent = 'Please fill in both question and answer.';
-                return;
-            }
-
-            // Build the knowledge object to send to backend
-            const knowledge = {
-                question: question,
-                answer: answer,
-                metadata: {
-                    tags: currentTags
-                }
+    // Simple similarity: count shared words (case-insensitive)
+    let best = { answer: "I don't know the answer yet!", similarity: 0, context: 'low_confidence' };
+    const userWords = userMessage.toLowerCase().split(/\W+/);
+    kb.forEach(entry => {
+        const qWords = (entry.question || '').toLowerCase().split(/\W+/);
+        const shared = userWords.filter(w => w && qWords.includes(w)).length;
+        const sim = qWords.length ? shared / qWords.length : 0;
+        if (sim > best.similarity) {
+            best = {
+                answer: entry.answer,
+                similarity: sim,
+                context: sim > 0.8 ? 'high_confidence' : sim > 0.6 ? 'medium_confidence' : 'low_confidence'
             };
-
-            // Send the new knowledge to the backend
-            fetch('/knowledge', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(knowledge)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    status.className = 'error-message';
-                    status.textContent = data.error;
-                } else {
-                    status.className = 'success-message';
-                    status.textContent = 'Knowledge added successfully!';
-
-                    // Clear the form and tags
-                    document.getElementById('question-input').value = '';
-                    document.getElementById('answer-input').value = '';
-                    currentTags = [];
-                    updateTagDisplay();
-                }
-            })
-            .catch(error => {
-                status.className = 'error-message';
-                status.textContent = 'Error connecting to server.';
-            });
         }
+    });
+    return best;
+}
+
+// Add a message (user or bot) to the chat window
+// className controls the style (user-message, bot-message, etc)
+// similarity is a number (0-1) showing how confident the bot is
+function addMessage(text, className, similarity = null) {
+    const messages = document.getElementById('chat-messages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message ' + className;
+    messageDiv.textContent = text;
+
+    // If this is a bot message, show the confidence score
+    if (similarity !== null) {
+        const confidenceDiv = document.createElement('div');
+        confidenceDiv.className = 'message-confidence';
+        confidenceDiv.textContent = `Confidence: ${Math.round(similarity * 100)}%`;
+        messageDiv.appendChild(confidenceDiv);
+    }
+
+    messages.appendChild(messageDiv);
+    // Always scroll to the bottom so new messages are visible
+    messages.scrollTop = messages.scrollHeight;
+}
+
+// Update the confidence indicator in the chat header
+function updateConfidence(context, similarity) {
+    const indicator = document.querySelector('.confidence-indicator');
+    const percentage = Math.round(similarity * 100);
+
+    if (context === 'high_confidence') {
+        indicator.textContent = `High Confidence (${percentage}%)`;
+        indicator.style.background = 'rgba(76, 175, 80, 0.2)';
+    } else if (context === 'medium_confidence') {
+        indicator.textContent = `Medium Confidence (${percentage}%)`;
+        indicator.style.background = 'rgba(255, 193, 7, 0.2)';
+    } else {
+        indicator.textContent = `Low Confidence (${percentage}%)`;
+        indicator.style.background = 'rgba(244, 67, 54, 0.2)';
+    }
+}
+
+// When user clicks a suggestion, fill the input and send it
+function usesuggestion(text) {
+    const input = document.getElementById('user-input');
+    input.value = text;
+    sendMessage();
+}
+
+// Add a tag to the knowledge entry (user can add multiple tags)
+function addTag() {
+    const input = document.getElementById('tag-input');
+    const tag = input.value.trim();
+
+    if (tag && !currentTags.includes(tag)) {
+        currentTags.push(tag);
+        input.value = '';
+        updateTagDisplay();
+    }
+}
+
+// Show all tags the user has added so far
+function updateTagDisplay() {
+    const tagList = document.getElementById('tag-list');
+    tagList.innerHTML = '';
+
+    currentTags.forEach((tag, index) => {
+        const tagDiv = document.createElement('div');
+        tagDiv.className = 'tag';
+        tagDiv.innerHTML = `
+            ${tag}
+            <button onclick="removeTag(${index})">&times;</button>
+        `;
+        tagList.appendChild(tagDiv);
+    });
+}
+
+// Remove a tag by index
+function removeTag(index) {
+    currentTags.splice(index, 1);
+    updateTagDisplay();
+}
+
+// Add new knowledge to the system (called when user submits the form)
+function addKnowledge() {
+    const question = document.getElementById('question-input').value.trim();
+    const answer = document.getElementById('answer-input').value.trim();
+    const status = document.getElementById('knowledge-status');
+
+    // Validate: must have both question and answer
+    if (!question || !answer) {
+        status.className = 'error-message';
+        status.textContent = 'Please fill in both question and answer.';
+        return;
+    }
+
+    // Get current knowledge base from localStorage (or empty array)
+    let kb = [];
+    try {
+        kb = JSON.parse(localStorage.getItem('knowledge_base') || '[]');
+    } catch (e) { kb = []; }
+
+    // Add new entry
+    kb.push({
+        question: question,
+        answer: answer,
+        metadata: { tags: [...currentTags] }
+    });
+    localStorage.setItem('knowledge_base', JSON.stringify(kb));
+
+    status.className = 'success-message';
+    status.textContent = 'Knowledge added successfully!';
+    document.getElementById('question-input').value = '';
+    document.getElementById('answer-input').value = '';
+    currentTags = [];
+    updateTagDisplay();
+}
+
+// On page load, initialize the knowledge base and input handler
+window.addEventListener('DOMContentLoaded', function() {
+    initKnowledgeBase();
+    setupInputHandler();
+});
     </script>
 </body>
 </html> 
