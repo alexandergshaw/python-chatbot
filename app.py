@@ -139,9 +139,11 @@ def chat():
             
         except Exception as e:
             logger.error(f"Error generating response: {str(e)}")
+            # Truncate error details to avoid large responses
+            err_short = str(e)[:200] + ('...' if len(str(e)) > 200 else '')
             return jsonify({
                 'error': 'Failed to generate response',
-                'details': str(e)
+                'details': err_short
             }), 500
         
         # Update conversation history
@@ -174,9 +176,10 @@ def chat():
             
         except Exception as e:
             logger.error(f"Error updating conversation history: {str(e)}")
+            err_short = str(e)[:200] + ('...' if len(str(e)) > 200 else '')
             return jsonify({
                 'error': 'Failed to update conversation history',
-                'details': str(e)
+                'details': err_short
             }), 500
 
         # Return the response to the user
@@ -188,9 +191,10 @@ def chat():
         
     except Exception as e:
         logger.error(f"Unexpected error in chat route: {str(e)}")
+        err_short = str(e)[:200] + ('...' if len(str(e)) > 200 else '')
         return jsonify({
             'error': 'An unexpected error occurred',
-            'details': str(e)
+            'details': err_short
         }), 500
 
 @app.route('/knowledge', methods=['POST'])
@@ -227,9 +231,10 @@ def add_knowledge():
         
     except Exception as e:
         logger.error(f"Error adding knowledge base entry: {str(e)}")
+        err_short = str(e)[:200] + ('...' if len(str(e)) > 200 else '')
         return jsonify({
             'error': 'Failed to add knowledge base entry',
-            'details': str(e)
+            'details': err_short
         }), 500
 
 if __name__ == '__main__':
