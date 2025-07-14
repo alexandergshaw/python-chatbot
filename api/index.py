@@ -20,6 +20,11 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
 
+# Handle favicon.ico requests to avoid 500 errors
+@app.route('/favicon.ico')
+def favicon():
+    return ('', 204)
+
 @app.route('/')
 def index():
     return render_template('index.html')
