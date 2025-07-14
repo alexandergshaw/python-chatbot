@@ -12,7 +12,7 @@ for noisy_logger in [
 ]:
     logging.getLogger(noisy_logger).setLevel(logging.WARNING)
 
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify, session, send_from_directory
 from datetime import datetime, timedelta
 import os
 logging.basicConfig(level=logging.DEBUG)
@@ -20,10 +20,10 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
 
-# Handle favicon.ico requests to avoid 500 errors
+# Serve favicon.ico from the static directory
 @app.route('/favicon.ico')
 def favicon():
-    return ('', 204)
+    return send_from_directory(app.static_folder, 'favicon.ico')
 
 @app.route('/')
 def index():
