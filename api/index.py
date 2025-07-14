@@ -21,9 +21,6 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
 
 # Serve favicon.ico from the static directory
-@app.route('/favicon.ico')
-def favicon():
-    return send_from_directory(app.static_folder, 'favicon.ico')
 
 @app.route('/')
 def index():
